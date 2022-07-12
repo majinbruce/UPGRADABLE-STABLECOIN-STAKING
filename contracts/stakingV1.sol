@@ -11,6 +11,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "hardhat/console.sol";
 
 contract staking is OwnableUpgradeable, UUPSUpgradeable {
     //  address public constant DAIPerUSD =
@@ -26,21 +27,22 @@ contract staking is OwnableUpgradeable, UUPSUpgradeable {
     // events
 
     //struct
-    struct stablecoinHolder {
-        address stablecoinId;
+    struct StablecoinHolder {
+        uint8 stablecoinId;
         uint256 stakingStartTimeStamp;
-        uint256 holderId;
+        uint256 amount;
+        bool isStaked;
     }
 
-    struct stablecoin {
-        uint256 stablecoinId;
+    struct Stablecoin {
         address stablecoinAddress;
+        uint8 stablecoinId;
         uint256 listPointer;
     }
 
     //mappings
-    mapping(uint256 => stablecoin) public ListOfStableCoins;
-    mapping(address => mapping(uint256 => stablecoinHolder))
+    mapping(uint256 => Stablecoin) public ListOfStableCoins;
+    mapping(address => mapping(uint256 => StablecoinHolder))
         public ListOfStableCoinHolders;
 
     uint256[] private stablecoinIds;
@@ -56,7 +58,7 @@ contract staking is OwnableUpgradeable, UUPSUpgradeable {
             _stablecoinAddress);
     }
 
-    function addNewStableCoin(address _stablecoinAddress, uint256 _stablecoinId)
+    function addNewStableCoin(address _stablecoinAddress, uint8 _stablecoinId)
         external
         onlyOwner
     {
@@ -101,24 +103,87 @@ contract staking is OwnableUpgradeable, UUPSUpgradeable {
         onlyOwner
     {}
 
-    function stakeCoin(uint8 _stablecoinID, uint256 _amount) external {
-        address stablecoinAddress = ListOfStableCoins[_stablecoinID]
+    function stakeCoin(uint8 _stablecoinId, uint256 _amount) external {
+        address stablecoinAddress = ListOfStableCoins[_stablecoinId]
             .stablecoinAddress;
 
+    
         address msgSender = msg.sender;
+        StablecoinHolder storage stablecoinholder = ListOfStableCoinHolders[
+            msgSender
+        ][_stablecoinId];
+
+        require(
+            stablecoinholder.isStaked == false,
+            "stakeCoin: you have already staked your tokens, unstake your tokens to stake new tokens"
+        );
         require(
             IERC20Upgradeable(stablecoinAddress).balanceOf(msgSender) > _amount
         );
         // require stablecoin exists
-        stablecoinHolder storage stablecoinholder;
-        stablecoinholder = ListOfStableCoinHolders[msgSender][_stablecoinId];
 
+        ListOfStableCoinHolders[msgSender][_stablecoinId] = StablecoinHolder(
+            _stablecoinId,
+            block.timestamp,
+            _amount,
+            true
+        );
+
+        IERC20Upgradeable(stablecoinAddress).safeTransferFrom(
+            msgSender,
+            address(this),
+            _amount
+        );
+    }
+
+    function unStakeCoin(uint8 _stablecoinId, uint256 _amount) external {
+        address stablecoinAddress = ListOfStableCoins[_stablecoinId]
+            .stablecoinAddress;
+        address msgSender = msg.sender;
+        StablecoinHolder storage stablecoinholder = ListOfStableCoinHolders[
+            msgSender
+        ][_stablecoinId];
+
+        require(
+            stablecoinholder.isStaked == true,
+            "UnstakeCoin: you have not staked your tokens"
+        );
+        require(
+            stablecoinholder.amount > _amount,
+            "UnstakeCoin: you do not have enough staked tokens"
+        );
+        // require stablecoin exists
+
+        uint256 timeElapsed = calculateTimeElapsed(
+            stablecoinholder.stakingStartTimeStamp
+        );
+
+        uint256 reward = calculateReward(timeElapsed, _amount);
+
+        // transfer the staked stablecoin
+        IERC20Upgradeable(stablecoinAddress).safeTransferFrom(
+            address(this),
+            msgSender,
+            _amount
+        );
+
+        // transfer reward accumulated
+        token.safeTransfer(msgSender, reward);
+    }
+
+    function calculateTimeElapsed(uint256 stakingStartTimeStamp)
+        internal
+        returns (uint256 timeElapsed)
+    {
+        return block.timestamp - stakingStartTimeStamp;
+    }
+
+    function getPerks() internal {
         
     }
 
-    function unStakeCoin(address _stablecoin, uint256 _amount) external {}
-
-    function getPerks() internal {}
-
-    function calculateReward() internal {}
+    function calculateReward(uint256 timeElapsed, uint256 amount)
+        internal
+        returns (uint256 reward)
+    {}
 }
