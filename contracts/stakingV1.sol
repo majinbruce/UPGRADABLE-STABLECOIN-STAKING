@@ -7,6 +7,7 @@ pragma solidity ^0.8.8;
 /// @dev All function calls are currently implemented without side effects
 /// @custom:experimental This is an experimental contract.
 
+import "./chainlinkAggregator.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -14,13 +15,9 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "hardhat/console.sol";
 
 contract staking is OwnableUpgradeable, UUPSUpgradeable {
-    //  address public constant DAIPerUSD =
-    //    0x2bA49Aaa16E6afD2a993473cfB70Fa8559B523cF;
-    //  address public constant USDCPerUSD =
-    //     0xa24de01df22b63d23Ebc1882a5E3d4ec0d907bFB;
-
     using SafeERC20Upgradeable for IERC20Upgradeable;
     IERC20Upgradeable private token;
+    chainlinkAggregator aggregator;
 
     address[] public listOfSupportedStableCoinAddress;
 
@@ -36,6 +33,7 @@ contract staking is OwnableUpgradeable, UUPSUpgradeable {
 
     struct Stablecoin {
         address stablecoinAddress;
+        address priceFeed;
         uint8 stablecoinId;
         uint256 listPointer;
     }
@@ -58,10 +56,11 @@ contract staking is OwnableUpgradeable, UUPSUpgradeable {
             _stablecoinAddress);
     }
 
-    function addNewStableCoin(address _stablecoinAddress, uint8 _stablecoinId)
-        external
-        onlyOwner
-    {
+    function addNewStableCoin(
+        address _stablecoinAddress,
+        address _priceFeed,
+        uint8 _stablecoinId
+    ) external onlyOwner {
         require(
             !stablecoinExists(_stablecoinAddress, _stablecoinId),
             "addNewStableCoin: stablecoin with this Id or address already exists"
@@ -69,6 +68,7 @@ contract staking is OwnableUpgradeable, UUPSUpgradeable {
 
         ListOfStableCoins[_stablecoinId].stablecoinAddress = _stablecoinAddress;
         ListOfStableCoins[_stablecoinId].stablecoinId = _stablecoinId;
+        ListOfStableCoins[_stablecoinId].priceFeed = _priceFeed;
         stablecoinIds.push(_stablecoinId);
         ListOfStableCoins[_stablecoinId].listPointer = stablecoinIds.length - 1;
     }
@@ -90,10 +90,14 @@ contract staking is OwnableUpgradeable, UUPSUpgradeable {
         delete ListOfStableCoins[_stablecoinId];
     }
 
-    function initialize(IERC20Upgradeable _token) external initializer {
+    function initialize(
+        IERC20Upgradeable _token,
+        address _chainlinkAggregatorAddress
+    ) external initializer {
         __Ownable_init();
         __UUPSUpgradeable_init();
         token = _token;
+        aggregator = chainlinkAggregator(_chainlinkAggregatorAddress);
     }
 
     function _authorizeUpgrade(address newImplementation)
@@ -107,7 +111,6 @@ contract staking is OwnableUpgradeable, UUPSUpgradeable {
         address stablecoinAddress = ListOfStableCoins[_stablecoinId]
             .stablecoinAddress;
 
-    
         address msgSender = msg.sender;
         StablecoinHolder storage stablecoinholder = ListOfStableCoinHolders[
             msgSender
@@ -149,7 +152,7 @@ contract staking is OwnableUpgradeable, UUPSUpgradeable {
             "UnstakeCoin: you have not staked your tokens"
         );
         require(
-            stablecoinholder.amount > _amount,
+            stablecoinholder.amount >= _amount,
             "UnstakeCoin: you do not have enough staked tokens"
         );
         // require stablecoin exists
@@ -157,8 +160,9 @@ contract staking is OwnableUpgradeable, UUPSUpgradeable {
         uint256 timeElapsed = calculateTimeElapsed(
             stablecoinholder.stakingStartTimeStamp
         );
+        address priceFeed = ListOfStableCoins[_stablecoinId].priceFeed;
 
-        uint256 reward = calculateReward(timeElapsed, _amount);
+        uint256 reward = getReward(_amount, timeElapsed, priceFeed);
 
         // transfer the staked stablecoin
         IERC20Upgradeable(stablecoinAddress).safeTransferFrom(
@@ -173,17 +177,55 @@ contract staking is OwnableUpgradeable, UUPSUpgradeable {
 
     function calculateTimeElapsed(uint256 stakingStartTimeStamp)
         internal
+        view
         returns (uint256 timeElapsed)
     {
         return block.timestamp - stakingStartTimeStamp;
     }
 
-    function getPerks() internal {
+    function getPerks(address priceFeed, uint256 _amount)
+        internal
+        view
+        returns (uint256)
+    {
         
+        uint256 priceOfStablecoin = uint256(
+            aggregator.getLatestPrice(priceFeed)
+        );
+        uint256 usdValueOfStablecoins = priceOfStablecoin * _amount;
+        if (usdValueOfStablecoins < 100) return 0;
+        else if (usdValueOfStablecoins < 500) return 2;
+        else if (usdValueOfStablecoins < 1000) return 5;
+        else return 10;
     }
 
-    function calculateReward(uint256 timeElapsed, uint256 amount)
-        internal
-        returns (uint256 reward)
-    {}
+    function getinterestRateAndPerks(
+        uint256 timeElapsed,
+        address priceFeed,
+        uint256 amount
+    ) internal view returns (uint256) {
+        uint256 perks = getPerks(priceFeed, amount);
+        if (timeElapsed < 31 days) {
+            return 5 + perks;
+        } else if (timeElapsed < 183 days) {
+            return 10 + perks;
+        } else if (timeElapsed < 365 days) {
+            return 15 + perks;
+        } else return 18 + perks;
+    }
+
+    function getReward(
+        uint256 amount,
+        uint256 timeElapsed,
+        address priceFeed
+    ) internal view returns (uint256) {
+        uint256 interestAndPerk = getinterestRateAndPerks(
+            timeElapsed,
+            priceFeed,
+            amount
+        );
+        uint256 denominator = 365 days * 100;
+        uint256 reward = (interestAndPerk * amount * timeElapsed) / denominator;
+        return reward;
+    }
 }
