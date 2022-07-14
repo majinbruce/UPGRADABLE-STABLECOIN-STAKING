@@ -56,8 +56,8 @@ describe("stablecoin staking", () => {
     dai = await DAI.attach(DAIPerUSD);
 
     // gib stakingV1 contract allowance for Dai tokens.
-    dai.connect(addr1).approve(staking.address, 100);
-    dai.connect(addr2).approve(staking.address, 100);
+    dai.connect(addr1).approve(staking.address, 101);
+    dai.connect(addr2).approve(staking.address, 101);
     //add dai stablecoin support
     await staking.addNewStableCoin(DAIPerUSD, daiPricefeed, 1);
   });
@@ -69,8 +69,14 @@ describe("stablecoin staking", () => {
       "addNewStableCoin: stablecoin with this Id or address already exists"
     );
   });
+  it("owner should be able to remove stablecoin", async function () {
+    await staking.removeStablecoin(DAIPerUSD, 1);
+    await expect(staking.connect(addr1).stakeCoin(1, 100)).to.be.revertedWith(
+      "addNewStableCoin: stablecoin with this Id does not exist"
+    );
+  });
 
-  it("user should be able to stakecoin ", async function () {
+  it("user should be able to stake stablecoin ", async function () {
     await staking.connect(addr1).stakeCoin(1, 100);
     const contractbalance = await dai.balanceOf(staking.address);
     //see if the transfer was succesful
@@ -78,7 +84,7 @@ describe("stablecoin staking", () => {
   });
 
   it("user should be able to unstake stakecoin ", async function () {
-    await staking.connect(addr1).stakeCoin(1, 100);
+    await staking.connect(addr1).stakeCoin(1, 101);
     const balanceBeforeStaking = await token.balanceOf(addr1.address);
     expect(balanceBeforeStaking).to.equal(0);
     // stake 100 tokens for 6 months
@@ -90,15 +96,16 @@ describe("stablecoin staking", () => {
     );
     const daiBalancebefore = await dai.balanceOf(addr1.address);
 
-    await staking.connect(addr1).unStakeCoin(1, 100);
+    await staking.connect(addr1).unStakeCoin(1, 101);
     const balanceafterStaking = await token.balanceOf(addr1.address);
     expect(balanceBeforeStaking).to.not.equal(balanceafterStaking);
 
-    //100 tokens staked for 6 months at 10percent apr should receive 5 tokens
-    expect(balanceafterStaking).to.equal(5);
+    //100 tokens staked for 6 months at 10percent apr + 2 percent perks effective apr=12 should receive 6 tokens
+    expect(balanceafterStaking).to.equal(6);
     const daiBalanceAfter = await dai.balanceOf(addr1.address);
-    const diff = daiBalanceAfter - daiBalancebefore;
+
     // user gets back his staked stablecoin
-    expect(diff).to.equal(100);
+    const diff = daiBalanceAfter - daiBalancebefore;
+    expect(diff).to.equal(101);
   });
 });
