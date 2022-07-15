@@ -3,12 +3,14 @@
  */
 require("@nomiclabs/hardhat-waffle");
 require("@openzeppelin/hardhat-upgrades");
-require("dotenv").config({ path: "../.env" });
+require("dotenv").config();
 const {
   RINKEBY_PRIVATE_KEY,
   ALCHEMY_API_KEY,
   ETHERSCAN_API_KEY,
   RINKEBY_PRIVATE_KEY_2,
+  ALCHEMY_API_KEY_POLYGON,
+  POLYGONSCAN_API_KEY,
 } = process.env;
 
 module.exports = {
@@ -19,8 +21,11 @@ module.exports = {
     rinkeby: {
       url: ALCHEMY_API_KEY,
       accounts: [`0x${RINKEBY_PRIVATE_KEY}`, `0x${RINKEBY_PRIVATE_KEY_2}`],
-      gasPrice: 20e9,
-      gas: 25e6,
+    },
+    polygon: {
+      url: ALCHEMY_API_KEY_POLYGON,
+      accounts: [`0x${RINKEBY_PRIVATE_KEY}`, `0x${RINKEBY_PRIVATE_KEY_2}`],
+      gasPrice: 50000000000,
     },
 
     hardhat: {
@@ -30,6 +35,6 @@ module.exports = {
     },
   },
   etherscan: {
-    apiKey: ETHERSCAN_API_KEY,
+    apiKey: POLYGONSCAN_API_KEY,
   },
 };
