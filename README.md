@@ -12,19 +12,19 @@
 
 ## MyToken.sol contarct
 
-#### Custom ERC20 token to create a liquidity pool & perform Weth-ERC20 swaps.
+#### Custom ERC20 token:-"BRUCE TOKEN" symbol :-"BTKN", this token will be distributed as a reward for staking.
 
-- Contract deployed on rinkeby test network at:
+- Contract deployed on Polygon Mumbai test network at:
 
-> [MyToken Contract Address](https://rinkeby.etherscan.io/address/0x00d7331513171BB41333D4De770Dc46FCCF0b556)
+> [MyToken Contract Address](https://mumbai.polygonscan.com/token/0x5f8B87F01d4Cc518d96E936B95DD47E19eB5eC1f)
 
 ## chainlinkAggregator.sol contarct
 
 #### chainlink price aggregator to get USD value of tokens staked in order to calculate perks.
 
-- Contract deployed on rinkeby test network at:
+- Contract deployed on Polygon Mumbai test network  at:
 
-> [chainlinkAggregator Contract Address](https://rinkeby.etherscan.io/address/0x00d7331513171BB41333D4De770Dc46FCCF0b556)
+> [chainlinkAggregator Contract Address](https://mumbai.polygonscan.com/address/0x62112087302d981159b8D46A812E05860fD2eF97)
 
 ## staking.sol contarct
 
@@ -43,29 +43,22 @@ If the USD Value of tokens staked is more than 100 dollars users get additional 
 |above 500$ | 5 % |
 |above 1000$ | 10% |
 
-- Contract deployed on rinkeby test network at:
+- Contract deployed on Polygon Mumbai test network at:
 
-> [staking Contract Address](https://rinkeby.etherscan.io/address/0xE357A8a4a3334bF8f5AA848b14563e229d9c56Ac) </br>
+> [staking Proxy Contract Address](https://mumbai.polygonscan.com/address/0xDa9974d844F56c02Ae274E2Ce2E157fC225F4b57) </br>
+> [staking implementation Contract Address](https://mumbai.polygonscan.com/address/0x8e78EF7B43014404b1Ff5278E940231FFd6E38F9) </br>
 
 #### Function addNewStableCoin
 
 - lets only owner add new stablecoin support </br>
-- Tx hash:- [addNewStableCoin](https://rinkeby.etherscan.io/tx/0x745d8ac755f09349395c7aea737da21ea7b2439d67a9aa56d46c9c8ce8a3ec96) </br>
+- Tx hash:- [addNewStableCoin](https://mumbai.polygonscan.com/tx/0xdd3696c49c59c5ddbeda30ada9025888f2a41e931624112ca883f83bd11ca8dc) </br>
 
 #### Function removeStablecoin
 
 - lets owner remove stablecoin support </br>
-- Tx hash:- [removeStablecoin](https://rinkeby.etherscan.io/tx/0x52d3e85ce6f9e54ad106e31282bc4f3ef3e745766998fd4b85a2238a6b63489e) </br>
+- Tx hash:- [removeStablecoin](https://mumbai.polygonscan.com/tx/0xd432a2b5d56de2dba04f021e6b2cc008cead72f6db7961758c5723d1e3419deb) </br>
 
-#### Function stakeCoin
 
-- lets users stake their stablecoins </br>
-- Tx hash:- [stakeCoin](https://rinkeby.etherscan.io/tx/0xe44352ad20154b90599bc12bc4d850c5c2aa24a53d7ec81ca569021739b36897) </br>
-
-#### Function unStakeCoin
-
-- lets users unstake their stablecoins & get rewards </br>
-- Tx hash:- [unStakeCoin](https://rinkeby.etherscan.io/tx/0xe44352ad20154b90599bc12bc4d850c5c2aa24a53d7ec81ca569021739b36897) </br>
 
 ## Requirements For Initial Setup
 
