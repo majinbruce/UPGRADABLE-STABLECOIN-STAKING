@@ -10,12 +10,15 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 contract MyTokenUpgradeable is
     Initializable,
     ERC20Upgradeable,
-    OwnableUpgradeable
+    OwnableUpgradeable,
+    UUPSUpgradeable
 {
     function initialize() external initializer {
         __ERC20_init("BRUCE TOKEN", "BTKN");
         __Ownable_init();
         __UUPSUpgradeable_init();
+
+        _mint(msg.sender, 100000);
     }
 
     function mint(address to, uint256 amount) external onlyOwner {

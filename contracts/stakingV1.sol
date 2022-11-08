@@ -75,6 +75,11 @@ contract staking is OwnableUpgradeable, UUPSUpgradeable {
         onlyOwner
     {}
 
+    /// @notice checks if a stablecoin exists
+    /// @dev location of listpointer can change hence ID of stablecoin was used as key & listpointer was stored in struct as well
+    /// @param _stablecoinAddress contract address of the stablecoin to add
+    /// @param _stablecoinId  id of the stablecoin which can be used to access the stablecoin properties
+    /// @return success bool to validate in require statements
     function stablecoinExists(address _stablecoinAddress, uint256 _stablecoinId)
         internal
         view
@@ -130,7 +135,6 @@ contract staking is OwnableUpgradeable, UUPSUpgradeable {
         delete ListOfStableCoins[_stablecoinId];
     }
 
-    /// @notice lets users stake their stablecoins
     /// @dev deadline parameter could be hardcoded in contract
     /// @param _stablecoinId  id of the stablecoin which can be used to access the stablecoin properties
     /// @param _amount the amount of stablecoin user wishes to stake

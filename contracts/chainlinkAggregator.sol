@@ -12,11 +12,11 @@ contract chainlinkAggregator {
             uint256 timeStamp,
             uint80 answeredInRound
         ) = AggregatorV3Interface(priceFeed).latestRoundData();
-        uint256 decimalsDenominator = uint256(10**decimals(priceFeed));
-        return price / int256(decimalsDenominator);
+
+        return price;
     }
 
-    function decimals(address priceFeed) internal view returns (uint8) {
+    function decimals(address priceFeed) external view returns (uint8) {
         return AggregatorV3Interface(priceFeed).decimals();
     }
 }
