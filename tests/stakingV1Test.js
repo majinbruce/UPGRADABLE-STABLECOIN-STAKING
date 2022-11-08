@@ -51,6 +51,7 @@ describe("stablecoin staking", () => {
     await token.connect(addr1).approve(staking.address, 5000);
 
     await token.approve(owner.address, 5000);
+    console.log("token approved");
 
     DAI = await ethers.getContractFactory("Dai");
     dai = await DAI.attach(DAIPerUSD);
@@ -58,6 +59,7 @@ describe("stablecoin staking", () => {
     // gib stakingV1 contract allowance for Dai tokens.
     dai.connect(addr1).approve(staking.address, 101);
     dai.connect(addr2).approve(staking.address, 101);
+    console.log("dai approved");
     //add dai stablecoin support
     await staking.addNewStableCoin(DAIPerUSD, daiPricefeed, 1);
   });
